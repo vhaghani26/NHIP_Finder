@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+
+# Assign wildcard sample names
+configfile: "samples.yaml"
+
+# Assign wildcard constraints
+wildcard_constraints:
+    sample='[a-zA-Z0-9_]+'
+    
+rule all:
+    input:
+        expand("04_NHIP_count/{sample}_hg38.txt", sample=config["samples"])
+    
+##########  
+## hg38 ##
+##########
+
+rule index_hg38:
+    input: "/share/lasallelab/genomes/hg38/hg38.fa",
+    output: multiext("/share/lasallelab/genomes/hg38/bwa_indexed/hg38", ".amb", ".ann", ".bwt", ".pac", ".sa")
+    log: "00_logs/index_hg38.log"
+    shell: "bwa index -p '/share/lasallelab/genomes/hg38/bwa_indexed/hg38' -a bwtsw '{input}' 2> '{log}'"
+
+rule align_hg38:
+    input:
+        genome = multiext("/share/lasallelab/genomes/hg38/bwa_indexed/hg38", ".amb", ".ann", ".bwt", ".pac", ".sa"),
+        r = "01_raw_data/{sample}.fastq.gz"
+    output: temp("02_sam_files/{sample}_hg38.sam")
+    log: "00_logs/{sample}_align_hg38.log"
+    shell: "bwa mem -t 6 '/share/lasallelab/genomes/hg38/bwa_indexed/hg38' '{input.r}' > '{output}' 2> '{log}'"
+
+rule sam_to_bam_hg38:
+    input: "02_sam_files/{sample}_hg38.sam"
+    output: temp("03_bam_files/{sample}_hg38.bam")
+    log: "00_logs/{sample}_sam_to_bam_hg38.log"
+    shell: "samtools view -@ 6 -Sb '{input}' > '{output}' 2> '{log}'"
+
+rule fixmate_hg38:
+    input: "03_bam_files/{sample}_hg38.bam"
+    output: temp("03_bam_files/{sample}_hg38.fixmate.bam")
+    log: "00_logs/{sample}_sam_fixmate_hg38.log"
+    shell: "samtools fixmate -@ 6 -rcm -O bam '{input}' '{output}' 2> '{log}'"
+
+rule sort_hg38:
+    input: "03_bam_files/{sample}_hg38.fixmate.bam"
+    output: temp("03_bam_files/{sample}_hg38.sorted.fixmate.bam")
+    log: "00_logs/{sample}_sam_sort_hg38.log"
+    shell: "samtools sort -@ 6 -O bam '{input}' > '{output}' 2> '{log}'"
+
+rule deduplicate_hg38:
+    input: "03_bam_files/{sample}_hg38.sorted.fixmate.bam"
+    output: temp("03_bam_files/{sample}_hg38.sorted.dedup.bam")
+    log: "00_logs/{sample}_sam_dedup_hg38.log"
+    shell: "samtools markdup -@ 6 -r --mode s '{input}' '{output}' 2> '{log}'"
+
+rule index_bam_hg38:
+    input: "03_bam_files/{sample}_hg38.sorted.dedup.bam"
+    output: temp("03_bam_files/{sample}_hg38.sorted.dedup.bam.bai")
+    log: "00_logs/{sample}_bam_index_hg38.log"
+    shell: "samtools index -@ 6 '{input}' 2> '{log}'"
+        
+rule count_NHIP_hg38:
+    input:
+        bam = "03_bam_files/{sample}_hg38.sorted.dedup.bam",
+        bai = "03_bam_files/{sample}_hg38.sorted.dedup.bam.bai"
+    output: "04_NHIP_count/{sample}_hg38.txt"
+    log: "00_logs/{sample}_count_NHIP_hg38.log"
+    shell: "samtools view -c {input.bam} chr22:49043919-49052385 > '{output}' 2> '{log}'"
