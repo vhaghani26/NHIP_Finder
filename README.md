@@ -2,7 +2,7 @@
 
 Collaborators: Viktoria Haghani, Vanessa Su, Jewel Wilson, He Yang
 
-This pipeline is designed to be fed in raw data in the form of FASTQ files (`fq.gz` or `fastq.gz`) and output the number of NHIP reads detected per sample.
+This pipeline is designed to be fed in raw data in the form of FASTQ files (`fq.gz` or `fastq.gz`) and output the number of NHIP reads detected per sample. The pipeline currently supports single-end data, including Nanopore sequencing data.
 
 ## Read in Samples (`01_read_samples.py`)
 
