@@ -8,7 +8,7 @@ This pipeline is designed to be fed in raw data in the form of FASTQ files (`fq.
 
 First, we need to read in the sample names from the sequencing data directory to create the `samples.yaml` file. This `samples.yaml` file will subsequently be used to delineate sample names for Snakemake to use in the alignment, deduplication, and sorting process to enable detection of NHIP.
 
-First, you will need to link the raw data to your working directory, where you plan on running the pipeline. In your working directory, create a soft link to the original data set. Please use the absolute path (i.e. starting with `/share/lasallelab/`). 
+You will need to link the raw data to your working directory, where you plan on running the pipeline. In your working directory, create a soft link to the original data set. Please use the absolute path (i.e. starting with `/share/lasallelab/`). 
 
 ```
 # Create a soft link to the original data set
